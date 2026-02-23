@@ -1,12 +1,12 @@
 {
   "outputDir": "src/generated/abi",
-  "barrelFile": "src/generated/abi/exports.ts",
+  "mainSource": "contracts",
   "reposDir": ".repos",
   "onMissingRepo": "error",
   "sources": [
     {
       "id": "contracts",
-      "repo": "berachain/contracts-internal",
+      "repo": "berachain/contracts",
       "ref": "main",
       "buildCommand": "npm install && forge build",
       "srcDir": "src",

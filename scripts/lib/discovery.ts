@@ -5,8 +5,8 @@ import { promisify } from "node:util";
 
 import fg from "fast-glob";
 
-import type { AbiSource, ArtifactLike, DiscoveredArtifact, OnMissingRepo } from "./types.ts";
-import { exists } from "./utils.ts";
+import type { AbiSource, ArtifactLike, DiscoveredArtifact, OnMissingRepo } from "./types";
+import { exists } from "./utils";
 
 const exec = promisify(execCb);
 

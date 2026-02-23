@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { extractArtifact, matchesAny } from "./discovery.ts";
+import { extractArtifact, matchesAny } from "./discovery";
 
 describe("matchesAny", () => {
   it("matches wildcard patterns", () => {

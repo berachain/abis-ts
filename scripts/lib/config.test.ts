@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { loadConfig } from "./config.ts";
+import { loadConfig } from "./config";
 
 const tempDirs: string[] = [];
 
@@ -25,7 +25,6 @@ describe("loadConfig", () => {
       configPath,
       JSON.stringify({
         outputDir: "out",
-        barrelFile: "out/exports.ts",
         sources: [{ id: "test", repo: "org/repo", buildCommand: "echo" }],
       }),
     );
@@ -41,7 +40,6 @@ describe("loadConfig", () => {
       configPath,
       JSON.stringify({
         outputDir: "out",
-        barrelFile: "out/exports.ts",
         sources: [{ id: "test", repoPath: "/some/path", buildCommand: "echo" }],
       }),
     );
@@ -56,7 +54,6 @@ describe("loadConfig", () => {
       configPath,
       JSON.stringify({
         outputDir: "out",
-        barrelFile: "out/exports.ts",
         sources: [{ id: "test", repo: "org/repo", repoPath: "/path", buildCommand: "echo" }],
       }),
     );
@@ -70,7 +67,6 @@ describe("loadConfig", () => {
       configPath,
       JSON.stringify({
         outputDir: "out",
-        barrelFile: "out/exports.ts",
         sources: [{ id: "test", buildCommand: "echo" }],
       }),
     );
@@ -84,7 +80,6 @@ describe("loadConfig", () => {
       configPath,
       JSON.stringify({
         outputDir: "out",
-        barrelFile: "out/exports.ts",
         sources: [{ id: "test", repo: "org/repo", buildCommand: "echo" }],
       }),
     );
@@ -100,11 +95,39 @@ describe("loadConfig", () => {
       configPath,
       JSON.stringify({
         outputDir: "out",
-        barrelFile: "out/exports.ts",
         sources: [],
       }),
     );
     await expect(loadConfig(configPath)).rejects.toThrow(/non-empty array/);
+  });
+
+  it("rejects mainSource that does not match any source id", async () => {
+    const tmpDir = await makeTempDir("config-test-");
+    const configPath = path.join(tmpDir, "abi.config.json");
+    await fs.writeFile(
+      configPath,
+      JSON.stringify({
+        outputDir: "out",
+        mainSource: "nonexistent",
+        sources: [{ id: "test", repo: "org/repo", buildCommand: "echo" }],
+      }),
+    );
+    await expect(loadConfig(configPath)).rejects.toThrow(/mainSource "nonexistent" does not match/);
+  });
+
+  it("accepts valid mainSource", async () => {
+    const tmpDir = await makeTempDir("config-test-");
+    const configPath = path.join(tmpDir, "abi.config.json");
+    await fs.writeFile(
+      configPath,
+      JSON.stringify({
+        outputDir: "out",
+        mainSource: "contracts",
+        sources: [{ id: "contracts", repo: "org/repo", buildCommand: "echo" }],
+      }),
+    );
+    const config = await loadConfig(configPath);
+    expect(config.mainSource).toBe("contracts");
   });
 
   it("rejects missing outputDir", async () => {
@@ -113,10 +136,9 @@ describe("loadConfig", () => {
     await fs.writeFile(
       configPath,
       JSON.stringify({
-        barrelFile: "out/exports.ts",
         sources: [{ id: "test", repo: "org/repo", buildCommand: "echo" }],
       }),
     );
-    await expect(loadConfig(configPath)).rejects.toThrow(/outputDir and barrelFile are required/);
+    await expect(loadConfig(configPath)).rejects.toThrow(/outputDir is required/);
   });
 });

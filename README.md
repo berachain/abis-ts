@@ -1,4 +1,4 @@
-# @berachain/abis-ts
+# @berachain/abis
 
 Typed ABI exports for [viem](https://viem.sh) generated from Solidity contract repos using [Foundry](https://book.getfoundry.sh/).
 
@@ -7,8 +7,8 @@ Typed ABI exports for [viem](https://viem.sh) generated from Solidity contract r
 Each contract ABI is available as a separate subpath import for tree-shaking:
 
 ```ts
-import { rewardVaultAbi } from "@berachain/abis-ts/contracts/pol/rewards/rewardVault";
-import { bgtAbi } from "@berachain/abis-ts/contracts/pol/bgt";
+import { rewardVaultAbi } from "@berachain/abis/contracts/pol/rewards/rewardVault";
+import { bgtAbi } from "@berachain/abis/contracts/pol/bgt";
 ```
 
 All exports are typed `as const` for full viem type inference.
@@ -36,7 +36,7 @@ Edit `abi.config.json`:
   "sources": [
     {
       "id": "contracts",
-      "repo": "berachain/contracts-internal",
+      "repo": "berachain/contracts",
       "ref": "main",
       "buildCommand": "npm install && forge build",
       "srcDir": "src",
@@ -95,4 +95,4 @@ Set `GITHUB_TOKEN` or `GH_TOKEN` environment variable. The token is injected int
 
 1. Add an entry to `sources[]` in `abi.config.json` with a unique `id`.
 2. Run `pnpm abi:generate` to verify discovery and generation.
-3. Import via `@berachain/abis-ts/{id}/path/to/contract`.
+3. Import via `@berachain/abis/{id}/path/to/contract`.

@@ -1,23 +1,25 @@
 import path from "node:path";
-import { toCamelCase } from "./naming.ts";
-import type { DiscoveredArtifact, GeneratedModule } from "./types.ts";
+import { toCamelCase } from "./naming";
+import type { DiscoveredArtifact, GeneratedModule } from "./types";
 
 /**
  * Convert a discovered artifact into a generated TypeScript module descriptor.
  *
  * The output path preserves the source repo's directory structure:
- * - Source id is used as the top-level directory (e.g. `contracts/`).
+ * - The main source (matching `mainSource`) outputs at the top level.
+ * - Other sources are nested under their `sourceId` directory.
  * - The relative directory from `srcDir` is preserved (e.g. `pol/rewards/`).
  * - The filename is the camelCase contract name (e.g. `rewardVault.ts`).
  *
  * The export name is `{camelCaseName}Abi` (e.g. `rewardVaultAbi`).
  * The module content is a `const … = [...] as const` for viem type inference.
  */
-export function artifactToModule(artifact: DiscoveredArtifact): GeneratedModule {
+export function artifactToModule(artifact: DiscoveredArtifact, mainSource?: string): GeneratedModule {
   const exportName = `${toCamelCase(artifact.contractName)}Abi`;
   const fileName = `${toCamelCase(artifact.contractName)}.ts`;
   const innerPath = artifact.relDir === "." ? fileName : path.posix.join(artifact.relDir, fileName);
-  const moduleRelPath = path.posix.join(artifact.sourceId, innerPath);
+  const isMain = mainSource !== undefined && artifact.sourceId === mainSource;
+  const moduleRelPath = isMain ? innerPath : path.posix.join(artifact.sourceId, innerPath);
   const abiContent = JSON.stringify(artifact.abi, null, 2);
 
   return {

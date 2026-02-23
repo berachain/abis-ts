@@ -1,9 +1,7 @@
 import fg from "fast-glob";
 import { defineConfig } from "tsup";
 
-const generatedEntries = fg.sync("src/generated/abi/**/*.ts", {
-  ignore: ["**/exports.ts"],
-});
+const generatedEntries = fg.sync("src/generated/abi/**/*.ts");
 
 const entry: Record<string, string> = {};
 

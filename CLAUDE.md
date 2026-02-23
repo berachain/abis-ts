@@ -5,7 +5,7 @@ This file provides context for Claude Code (claude.ai/code) when working on this
 
 ## Project overview
 
-`@berachain/abis-ts` generates typed TypeScript ABI exports from Solidity contract repos.
+`@berachain/abis` generates typed TypeScript ABI exports from Solidity contract repos.
 It clones contract repos, runs Foundry builds, and outputs `as const` TypeScript modules
 compatible with viem's type inference.
 
@@ -53,7 +53,7 @@ pnpm abi:clean         # Remove cloned repos (.repos/)
 - **Biome** for linting and formatting (see `biome.json`).
 - **Pinned dependencies** — use exact versions, no `^` or `~` prefixes.
 - **No barrel export** — the package is tree-shakeable by default. Each ABI is imported
-  via subpath: `import { tokenAbi } from "@berachain/abis-ts/contracts/pol/rewards/token"`.
+  via subpath: `import { tokenAbi } from "@berachain/abis/contracts/pol/rewards/token"`.
 - **`.js` extensions** in TypeScript imports for NodeNext module resolution.
 - Generated files are **never committed** — `src/generated/` and `.repos/` are gitignored.
 - Config is in `abi.config.json` at the repo root.
@@ -72,4 +72,4 @@ In CI, the workflow passes `secrets.GITHUB_TOKEN` automatically.
 
 1. Add entry to `sources[]` in `abi.config.json` with a unique `id`.
 2. Run `pnpm abi:generate` to verify.
-3. Import via `@berachain/abis-ts/{id}/path/to/contract`.
+3. Import via `@berachain/abis/{id}/path/to/contract`.

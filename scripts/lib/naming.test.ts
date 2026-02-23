@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { splitWords, toCamelCase, toKebabCase, toPascalCase } from "./naming.ts";
+import { splitWords, toCamelCase, toKebabCase, toPascalCase } from "./naming";
 
 describe("splitWords", () => {
   it("splits camelCase", () => {

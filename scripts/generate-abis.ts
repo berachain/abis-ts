@@ -27,7 +27,7 @@ export { writeGeneratedFiles } from "./lib/writer";
  * 3. Discover Foundry artifacts by walking the source's `srcDir`.
  * 4. Convert artifacts to TypeScript module descriptors.
  * 5. Deduplicate and validate (detect ABI collisions).
- * 6. Write generated `.ts` files and the barrel re-export file.
+ * 6. Write generated `.ts` files to the output directory.
  */
 export async function generateAbis(options: GenerateOptions = {}): Promise<{
   moduleCount: number;
@@ -42,9 +42,12 @@ export async function generateAbis(options: GenerateOptions = {}): Promise<{
   const warnings: string[] = [];
 
   for (const source of config.sources) {
+    const override = options.repoOverrides?.[source.id] ?? options.repoOverrides?.["*"];
+    const effectiveSource = override && source.repo ? { ...source, repo: override } : source;
+
     let resolvedPath: string;
     try {
-      resolvedPath = await ensureRepo(source, reposDir);
+      resolvedPath = await ensureRepo(effectiveSource, reposDir);
     } catch (err) {
       const message = `Failed to resolve repo for source "${source.id}": ${err instanceof Error ? err.message : err}`;
       if (config.onMissingRepo === "warn") {
@@ -64,7 +67,7 @@ export async function generateAbis(options: GenerateOptions = {}): Promise<{
     warnings.push(...discovered.warnings);
   }
 
-  const modules = allArtifacts.map(artifactToModule);
+  const modules = allArtifacts.map((a) => artifactToModule(a, config.mainSource));
   const deduped = dedupeAndValidateModules(modules);
   warnings.push(...deduped.warnings);
 
@@ -78,7 +81,24 @@ export async function generateAbis(options: GenerateOptions = {}): Promise<{
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  generateAbis()
+  const repoOverrides: Record<string, string> = {};
+  for (let i = 2; i < process.argv.length; i++) {
+    if (process.argv[i] === "--repo" && process.argv[i + 1]) {
+      const value = process.argv[++i];
+      const eqIdx = value.indexOf("=");
+      if (eqIdx !== -1) {
+        // --repo sourceId=org/repo → override specific source
+        repoOverrides[value.slice(0, eqIdx)] = value.slice(eqIdx + 1);
+      } else {
+        // --repo org/repo → override all sources
+        repoOverrides["*"] = value;
+      }
+    }
+  }
+
+  generateAbis({
+    repoOverrides: Object.keys(repoOverrides).length > 0 ? repoOverrides : undefined,
+  })
     .then((result) => {
       for (const warning of result.warnings) {
         console.warn(`[abi:generate] ${warning}`);

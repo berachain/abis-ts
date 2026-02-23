@@ -1,7 +1,7 @@
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { ensureRepo, injectAuthToken, resolveRepoUrl } from "./git.ts";
+import { ensureRepo, injectAuthToken, resolveRepoUrl } from "./git";
 
 describe("resolveRepoUrl", () => {
   it("expands GitHub shorthand to HTTPS URL", () => {

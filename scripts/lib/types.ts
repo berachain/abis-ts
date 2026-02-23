@@ -3,7 +3,7 @@ export type OnMissingRepo = "error" | "warn";
 
 /** A single ABI source definition from the config file. */
 export type AbiSource = {
-  /** Unique identifier used as the output directory prefix. */
+  /** Unique identifier for this source. */
   id: string;
   /** GitHub shorthand (`org/repo`) or full git URL. Mutually exclusive with `repoPath`. */
   repo?: string;
@@ -25,8 +25,13 @@ export type AbiSource = {
 export type AbiConfig = {
   /** Directory where generated TypeScript modules are written. */
   outputDir: string;
-  /** Path to the barrel file re-exporting all generated modules. */
-  barrelFile: string;
+  /**
+   * Source id whose contracts are output at the top level (no sub-directory prefix).
+   * All other sources are nested under their `id`. For example, with `mainSource: "contracts"`:
+   * - `contracts` → `@berachain/abis/wbera`
+   * - `governance` → `@berachain/abis/governance/governor`
+   */
+  mainSource?: string;
   /** Directory where cloned repos are cached. Defaults to `".repos"`. */
   reposDir?: string;
   /** Behavior when a repo cannot be resolved. Defaults to `"error"`. */
@@ -77,4 +82,11 @@ export type GenerateOptions = {
   configPath?: string;
   /** Whether to run the build command for each source. Defaults to `true`. */
   runBuild?: boolean;
+  /**
+   * Override the `repo` field for sources, keyed by source id.
+   * Use `"*"` to override all sources that don't have a specific override.
+   * Example: `{ contracts: "berachain/contracts-internal" }`
+   * Example: `{ "*": "berachain/contracts-internal" }`
+   */
+  repoOverrides?: Record<string, string>;
 };

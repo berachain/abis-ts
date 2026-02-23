@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { generateAbis } from "./generate-abis.ts";
+import { generateAbis } from "./generate-abis";
 
 const tempDirs: string[] = [];
 
@@ -30,7 +30,6 @@ describe("generateAbis integration", () => {
       JSON.stringify(
         {
           outputDir: path.join(tmpRepo, "src/generated/abi"),
-          barrelFile: path.join(tmpRepo, "src/generated/abi/exports.ts"),
           onMissingRepo: "error",
           sources: [
             {
@@ -57,7 +56,6 @@ describe("generateAbis integration", () => {
       expect(result.moduleCount).toBe(2);
       expect(result.warnings.some((w: string) => w.includes("Skipping artifact without ABI"))).toBe(true);
 
-      const barrel = await fs.readFile(path.join(tmpRepo, "src/generated/abi/exports.ts"), "utf8");
       const tokenModuleOne = await fs.readFile(
         path.join(tmpRepo, "src/generated/abi/mock/tokens/token.ts"),
         "utf8",
@@ -67,8 +65,6 @@ describe("generateAbis integration", () => {
         "utf8",
       );
 
-      expect(barrel).toContain('export * from "./mock/tokens/token.js"');
-      expect(barrel).toContain('export * from "./mock2/tokens/token.js"');
       expect(tokenModuleOne).toContain("export const tokenAbi");
       expect(tokenModuleOne).toContain("as const;");
       expect(tokenModuleTwo).toContain("export const tokenAbi");
