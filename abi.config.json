@@ -1,0 +1,17 @@
+{
+  "outputDir": "src/generated/abi",
+  "barrelFile": "src/generated/abi/exports.ts",
+  "reposDir": ".repos",
+  "onMissingRepo": "error",
+  "sources": [
+    {
+      "id": "contracts",
+      "repo": "berachain/contracts-internal",
+      "ref": "main",
+      "buildCommand": "npm install && forge build",
+      "srcDir": "src",
+      "outDir": "out",
+      "excludePatterns": ["I*.sol", "*_V*.sol"]
+    }
+  ]
+}
