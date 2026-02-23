@@ -42,8 +42,13 @@ export async function generateAbis(options: GenerateOptions = {}): Promise<{
   const warnings: string[] = [];
 
   for (const source of config.sources) {
-    const override = options.repoOverrides?.[source.id] ?? options.repoOverrides?.["*"];
-    const effectiveSource = override && source.repo ? { ...source, repo: override } : source;
+    const repoOverride = options.repoOverrides?.[source.id] ?? options.repoOverrides?.["*"];
+    const refOverride = options.refOverrides?.[source.id] ?? options.refOverrides?.["*"];
+    const effectiveSource = {
+      ...source,
+      ...(repoOverride && source.repo ? { repo: repoOverride } : {}),
+      ...(refOverride ? { ref: refOverride } : {}),
+    };
 
     let resolvedPath: string;
     try {
@@ -82,22 +87,26 @@ export async function generateAbis(options: GenerateOptions = {}): Promise<{
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const repoOverrides: Record<string, string> = {};
+  const refOverrides: Record<string, string> = {};
+
   for (let i = 2; i < process.argv.length; i++) {
-    if (process.argv[i] === "--repo" && process.argv[i + 1]) {
+    const flag = process.argv[i];
+    const next = process.argv[i + 1];
+    if ((flag === "--repo" || flag === "--ref") && next) {
+      const map = flag === "--repo" ? repoOverrides : refOverrides;
       const value = process.argv[++i];
       const eqIdx = value.indexOf("=");
       if (eqIdx !== -1) {
-        // --repo sourceId=org/repo → override specific source
-        repoOverrides[value.slice(0, eqIdx)] = value.slice(eqIdx + 1);
+        map[value.slice(0, eqIdx)] = value.slice(eqIdx + 1);
       } else {
-        // --repo org/repo → override all sources
-        repoOverrides["*"] = value;
+        map["*"] = value;
       }
     }
   }
 
   generateAbis({
     repoOverrides: Object.keys(repoOverrides).length > 0 ? repoOverrides : undefined,
+    refOverrides: Object.keys(refOverrides).length > 0 ? refOverrides : undefined,
   })
     .then((result) => {
       for (const warning of result.warnings) {

@@ -12,6 +12,15 @@
       "srcDir": "src",
       "outDir": "out",
       "excludePatterns": ["I*.sol", "*_V*.sol"]
+    },
+    {
+      "id": "staking-pools",
+      "repo": "berachain/contracts-staking-pools",
+      "ref": "main",
+      "buildCommand": "forge install && forge build",
+      "srcDir": "src",
+      "outDir": "out",
+      "excludePatterns": ["I*.sol", "*_V*.sol"]
     }
   ]
 }

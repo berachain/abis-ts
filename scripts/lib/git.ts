@@ -12,9 +12,13 @@ const exec = promisify(execCb);
  * Expand a repo identifier into a full git-clone-ready URL.
  *
  * Accepts three formats:
- * - GitHub shorthand: `"org/repo"` → `"https://github.com/org/repo.git"`
+ * - GitHub shorthand: `"org/repo"` → SSH or HTTPS depending on environment
  * - Full HTTPS URL: passed through unchanged
  * - SSH URL (`git@…`): passed through unchanged
+ *
+ * When running in CI (`CI` env var is set), shorthand expands to HTTPS
+ * (compatible with `GITHUB_TOKEN` authentication). Otherwise it expands
+ * to SSH (`git@github.com:org/repo.git`) for local development.
  *
  * @throws if the input does not match any of the above patterns.
  */
@@ -23,7 +27,7 @@ export function resolveRepoUrl(repo: string): string {
     return repo;
   }
   if (/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(repo)) {
-    return `https://github.com/${repo}.git`;
+    return process.env.CI ? `https://github.com/${repo}.git` : `git@github.com:${repo}.git`;
   }
   throw new Error(`Invalid repo format: "${repo}". Use "org/repo" or a full git URL.`);
 }

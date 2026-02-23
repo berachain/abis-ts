@@ -4,7 +4,23 @@ import { afterEach, describe, expect, it } from "vitest";
 import { ensureRepo, injectAuthToken, resolveRepoUrl } from "./git";
 
 describe("resolveRepoUrl", () => {
-  it("expands GitHub shorthand to HTTPS URL", () => {
+  const savedCI = process.env.CI;
+
+  afterEach(() => {
+    if (savedCI !== undefined) {
+      process.env.CI = savedCI;
+    } else {
+      delete process.env.CI;
+    }
+  });
+
+  it("expands shorthand to SSH when not in CI", () => {
+    delete process.env.CI;
+    expect(resolveRepoUrl("berachain/contracts")).toBe("git@github.com:berachain/contracts.git");
+  });
+
+  it("expands shorthand to HTTPS when in CI", () => {
+    process.env.CI = "true";
     expect(resolveRepoUrl("berachain/contracts")).toBe("https://github.com/berachain/contracts.git");
   });
 
@@ -19,6 +35,9 @@ describe("resolveRepoUrl", () => {
   });
 
   it("handles dots and hyphens in org/repo names", () => {
+    delete process.env.CI;
+    expect(resolveRepoUrl("my-org/my.repo")).toBe("git@github.com:my-org/my.repo.git");
+    process.env.CI = "true";
     expect(resolveRepoUrl("my-org/my.repo")).toBe("https://github.com/my-org/my.repo.git");
   });
 

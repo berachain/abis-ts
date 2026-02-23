@@ -89,4 +89,11 @@ export type GenerateOptions = {
    * Example: `{ "*": "berachain/contracts-internal" }`
    */
   repoOverrides?: Record<string, string>;
+  /**
+   * Override the `ref` (branch/tag) for sources, keyed by source id.
+   * Use `"*"` to override all sources that don't have a specific override.
+   * Example: `{ contracts: "develop" }`
+   * Example: `{ "*": "v2.0.0" }`
+   */
+  refOverrides?: Record<string, string>;
 };
