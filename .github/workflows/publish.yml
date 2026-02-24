@@ -31,7 +31,7 @@ on:
 
 jobs:
   publish:
-    environment: main
+    environment: production
     runs-on: ubuntu-latest
     permissions:
       contents: write

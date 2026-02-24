@@ -1,7 +1,6 @@
 name: CI
 
 on:
-  push:
   pull_request:
 
 jobs:
@@ -40,31 +39,3 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
-
-  build:
-    runs-on: ubuntu-latest
-    environment: main
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Generate ABIs
-        run: pnpm abi:generate
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_READ_ONLY_PAT }}
-
-      - run: pnpm test
-      - run: pnpm build
