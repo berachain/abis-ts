@@ -14,7 +14,12 @@ for (const file of generatedEntries) {
 export default defineConfig({
   entry,
   format: ["esm", "cjs"],
+  outExtension({ format }) {
+    return { js: format === "esm" ? ".mjs" : ".cjs" };
+  },
+  target: "es2022",
   dts: true,
+  minify: true,
   sourcemap: true,
   clean: true,
 });

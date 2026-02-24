@@ -3,13 +3,6 @@ name: Publish
 on:
   workflow_dispatch:
     inputs:
-      release_type:
-        description: "Release type"
-        required: true
-        type: choice
-        options:
-          - beta
-          - release
       version_bump:
         description: "Version bump (patch, minor, major) or exact semver (e.g. 1.2.3)"
         required: true
@@ -38,6 +31,7 @@ on:
 
 jobs:
   publish:
+    environment: main
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -80,13 +74,22 @@ jobs:
           --ref contracts=${{ inputs.contracts_ref }}
           --ref staking-pools=${{ inputs.staking_pools_ref }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_READ_ONLY_PAT }}
 
       - run: pnpm test
       - run: pnpm build
 
+      - name: Resolve release type
+        id: release
+        run: |
+          if [ "${{ inputs.contracts_ref }}" != "main" ] || [ "${{ inputs.staking_pools_ref }}" != "main" ]; then
+            echo "type=beta" >> "$GITHUB_OUTPUT"
+          else
+            echo "type=release" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Bump version (beta)
-        if: inputs.release_type == 'beta'
+        if: steps.release.outputs.type == 'beta'
         run: |
           BUMP="${{ inputs.version_bump }}"
           if [[ "$BUMP" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
@@ -96,7 +99,7 @@ jobs:
           fi
 
       - name: Bump version (release)
-        if: inputs.release_type == 'release'
+        if: steps.release.outputs.type == 'release'
         run: |
           BUMP="${{ inputs.version_bump }}"
           if [[ "$BUMP" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
@@ -110,7 +113,7 @@ jobs:
 
       - name: Publish to npm
         run: |
-          if [ "${{ inputs.release_type }}" = "beta" ]; then
+          if [ "${{ steps.release.outputs.type }}" = "beta" ]; then
             pnpm publish --access public --tag beta --no-git-checks --provenance
           else
             pnpm publish --access public --tag latest --no-git-checks --provenance
@@ -130,7 +133,7 @@ jobs:
       - name: Create GitHub release
         run: |
           PRERELEASE_FLAG=""
-          if [ "${{ inputs.release_type }}" = "beta" ]; then
+          if [ "${{ steps.release.outputs.type }}" = "beta" ]; then
             PRERELEASE_FLAG="--prerelease"
           fi
           gh release create "v${VERSION}" \
