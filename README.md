@@ -7,11 +7,103 @@ Typed ABI exports for [viem](https://viem.sh) generated from Solidity contract r
 Each contract ABI is available as a separate subpath import for tree-shaking:
 
 ```ts
-import { rewardVaultAbi } from "@berachain/abis/contracts/pol/rewards/rewardVault";
-import { bgtAbi } from "@berachain/abis/contracts/pol/bgt";
+import { rewardVaultAbi } from "@berachain/abis/pol/rewards/rewardVault";
+import { bgtAbi } from "@berachain/abis/pol/bgt";
 ```
 
 All exports are typed `as const` for full viem type inference.
+
+## Exports
+
+<!-- exports:start -->
+```
+@berachain/abis
+├── pol/
+│   ├── beaconDeposit
+│   ├── beaconRootsHelper
+│   ├── rewards/
+│   │   ├── beraChef
+│   │   ├── bgtIncentiveDistributor
+│   │   ├── blockRewardController
+│   │   ├── dedicatedEmissionStreamManager
+│   │   ├── distributor
+│   │   ├── rewardAllocatorFactory
+│   │   ├── rewardVault
+│   │   ├── rewardVaultFactory
+│   │   └── rewardVaultHelper
+│   ├── bgt
+│   ├── bgtDeployer
+│   ├── bgtFeeDeployer
+│   ├── bgtIncentiveDistributorDeployer
+│   ├── bgtIncentiveFeeCollector
+│   ├── bgtIncentiveFeeDeployer
+│   ├── bgtStaker
+│   ├── dedicatedEmissionStreamManagerDeployer
+│   ├── feeCollector
+│   ├── lst/
+│   │   ├── lstStakerVault
+│   │   ├── lstStakerVaultFactory
+│   │   ├── lstStakerVaultFactoryDeployer
+│   │   └── lstStakerVaultWithdrawalRequest
+│   ├── polDeployer
+│   ├── rewardAllocatorFactoryDeployer
+│   ├── rewardVaultHelperDeployer
+│   ├── wberaStakerVault
+│   ├── wberaStakerVaultWithdrawalRequest
+│   └── wberaStakerWithdrawReqDeployer
+├── libraries/
+│   ├── beaconRoots
+│   ├── ssz
+│   └── utils
+├── gov/
+│   ├── berachainGovernance
+│   ├── govDeployer
+│   └── timeLock
+├── honey/
+│   ├── collateralVault
+│   ├── honey
+│   ├── honeyDeployer
+│   ├── honeyFactory
+│   ├── honeyFactoryPythWrapper
+│   ├── honeyFactoryReader
+│   └── vaultAdmin
+├── base/
+│   ├── create2Deployer
+│   ├── deployHelper
+│   ├── factoryOwnable
+│   └── stakingRewards
+├── extras/
+│   ├── peggedPriceOracle
+│   ├── pythPriceOracle
+│   ├── pythPriceOracleDeployer
+│   ├── rootPriceOracle
+│   └── rootPriceOracleDeployer
+├── wbera
+└── staking-pools/
+    ├── accountingOracle
+    ├── libraries/
+    │   ├── beaconRoots
+    │   └── ssz
+    ├── helpers/
+    │   ├── beaconRootsHelper
+    │   └── elWithdrawHelper
+    ├── base/
+    │   ├── create2Deployer
+    │   ├── deployHelper
+    │   └── stBera
+    ├── delegation/
+    │   ├── delegationHandler
+    │   ├── delegationHandlerDeployer
+    │   └── delegationHandlerFactory
+    ├── deployer
+    ├── core/
+    │   ├── smartOperator
+    │   ├── stakingPool
+    │   └── stakingRewardsVault
+    ├── stakingPoolContractsFactory
+    └── withdrawalVault
+```
+<!-- exports:end -->
 
 ## How it works
 
@@ -30,7 +122,7 @@ Edit `abi.config.json`:
 ```json
 {
   "outputDir": "src/generated/abi",
-  "barrelFile": "src/generated/abi/exports.ts",
+  "mainSource": "contracts",
   "reposDir": ".repos",
   "onMissingRepo": "error",
   "sources": [
@@ -51,7 +143,7 @@ Edit `abi.config.json`:
 
 | Field | Required | Description |
 |---|---|---|
-| `id` | yes | Unique identifier, used as top-level output directory |
+| `id` | yes | Unique identifier, used as output sub-directory (unless `mainSource`) |
 | `repo` | one of `repo`/`repoPath` | GitHub shorthand (`org/repo`) or full git URL |
 | `repoPath` | one of `repo`/`repoPath` | Local path to a pre-existing checkout |
 | `ref` | no | Branch, tag, or SHA (defaults to repo default branch) |
@@ -65,7 +157,7 @@ Edit `abi.config.json`:
 | Field | Default | Description |
 |---|---|---|
 | `outputDir` | required | Directory for generated TypeScript modules |
-| `barrelFile` | required | Path to the barrel re-export file |
+| `mainSource` | — | Source id whose contracts output at the top level (no sub-directory prefix) |
 | `reposDir` | `.repos` | Directory for cached repo clones |
 | `onMissingRepo` | `error` | Behavior when a repo can't be resolved (`error` or `warn`) |
 

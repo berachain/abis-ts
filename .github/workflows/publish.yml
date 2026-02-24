@@ -15,11 +15,21 @@ on:
         required: true
         type: string
         default: patch
+      contracts_repo:
+        description: "Repo for contracts source (org/repo)"
+        required: false
+        type: string
+        default: berachain/contracts
       contracts_ref:
         description: "Branch/tag/SHA for contracts source"
         required: false
         type: string
         default: main
+      staking_pools_repo:
+        description: "Repo for staking-pools source (org/repo)"
+        required: false
+        type: string
+        default: berachain/contracts-staking-pools
       staking_pools_ref:
         description: "Branch/tag/SHA for staking-pools source"
         required: false
@@ -34,6 +44,18 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure branch is up to date
+        run: |
+          git fetch origin ${{ github.ref_name }}
+          LOCAL=$(git rev-parse HEAD)
+          REMOTE=$(git rev-parse origin/${{ github.ref_name }})
+          if [ "$LOCAL" != "$REMOTE" ]; then
+            echo "::error::Branch ${{ github.ref_name }} is not up to date with remote. Pull and push latest changes first."
+            exit 1
+          fi
 
       - uses: pnpm/action-setup@v4
         with:
@@ -53,6 +75,8 @@ jobs:
       - name: Generate ABIs
         run: >-
           pnpm abi:generate
+          --repo contracts=${{ inputs.contracts_repo }}
+          --repo staking-pools=${{ inputs.staking_pools_repo }}
           --ref contracts=${{ inputs.contracts_ref }}
           --ref staking-pools=${{ inputs.staking_pools_ref }}
         env:
@@ -81,22 +105,37 @@ jobs:
             npm version "$BUMP" --no-git-tag-version
           fi
 
+      - name: Ensure npm supports OIDC
+        run: npm install -g npm@latest
+
       - name: Publish to npm
         run: |
           if [ "${{ inputs.release_type }}" = "beta" ]; then
-            pnpm publish --access public --tag beta --no-git-checks
+            pnpm publish --access public --tag beta --no-git-checks --provenance
           else
-            pnpm publish --access public --tag latest --no-git-checks
+            pnpm publish --access public --tag latest --no-git-checks --provenance
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Tag and push
         run: |
           VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add package.json
           git commit -m "chore: release v${VERSION}"
           git tag "v${VERSION}"
           git push origin HEAD --tags
+
+      - name: Create GitHub release
+        run: |
+          PRERELEASE_FLAG=""
+          if [ "${{ inputs.release_type }}" = "beta" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          gh release create "v${VERSION}" \
+            --title "v${VERSION}" \
+            --generate-notes \
+            $PRERELEASE_FLAG
+        env:
+          GH_TOKEN: ${{ github.token }}

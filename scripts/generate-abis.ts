@@ -5,6 +5,7 @@ import { discoverArtifacts, matchesAny } from "./lib/discovery";
 import { ensureRepo } from "./lib/git";
 import { artifactToModule, dedupeAndValidateModules } from "./lib/modules";
 import { splitWords, toCamelCase, toKebabCase, toPascalCase } from "./lib/naming";
+import { updateReadmeTree } from "./lib/readme";
 import type { DiscoveredArtifact, GenerateOptions } from "./lib/types";
 import { stableStringify } from "./lib/utils";
 import { writeGeneratedFiles } from "./lib/writer";
@@ -14,6 +15,7 @@ export { loadConfig } from "./lib/config";
 export { discoverArtifacts, extractArtifact } from "./lib/discovery";
 export { ensureRepo, injectAuthToken, resolveRepoUrl } from "./lib/git";
 export { artifactToModule, dedupeAndValidateModules } from "./lib/modules";
+export { buildExportTree, updateReadmeTree } from "./lib/readme";
 export type * from "./lib/types";
 export { writeGeneratedFiles } from "./lib/writer";
 
@@ -77,6 +79,7 @@ export async function generateAbis(options: GenerateOptions = {}): Promise<{
   warnings.push(...deduped.warnings);
 
   await writeGeneratedFiles(config, deduped.modules);
+  await updateReadmeTree(deduped.modules);
 
   return {
     moduleCount: deduped.modules.length,
