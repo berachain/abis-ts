@@ -6,6 +6,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import { generateAbis } from "./generate-abis";
 
 const tempDirs: string[] = [];
+const fixtureDirs = [
+  path.resolve("test/fixtures/mock-source-artifacts"),
+  path.resolve("test/fixtures/mock-source-two"),
+];
 
 async function makeTempDir(prefix: string): Promise<string> {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
@@ -15,13 +19,18 @@ async function makeTempDir(prefix: string): Promise<string> {
 
 afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })));
+  await Promise.all(
+    fixtureDirs.flatMap((dir) =>
+      ["out", "cache"].map((sub) => fs.rm(path.join(dir, sub), { recursive: true, force: true })),
+    ),
+  );
 });
 
 describe("generateAbis integration", () => {
   it("generates modules preserving directory structure", async () => {
     const tmpRepo = await makeTempDir("abi-gen-repo-");
-    const sourceRepoOne = path.resolve("test/fixtures/mock-source-artifacts");
-    const sourceRepoTwo = path.resolve("test/fixtures/mock-source-two");
+    const sourceRepoOne = fixtureDirs[0];
+    const sourceRepoTwo = fixtureDirs[1];
 
     const configPath = path.join(tmpRepo, "abi.config.json");
 
@@ -35,12 +44,12 @@ describe("generateAbis integration", () => {
             {
               id: "mock",
               repoPath: sourceRepoOne,
-              buildCommand: "echo skip",
+              buildCommand: "forge build",
             },
             {
               id: "mock2",
               repoPath: sourceRepoTwo,
-              buildCommand: "echo skip",
+              buildCommand: "forge build",
             },
           ],
         },
@@ -52,7 +61,7 @@ describe("generateAbis integration", () => {
     const originalCwd = process.cwd();
     process.chdir(tmpRepo);
     try {
-      const result = await generateAbis({ configPath, runBuild: false });
+      const result = await generateAbis({ configPath, runBuild: true });
       expect(result.moduleCount).toBe(2);
       expect(result.warnings.some((w: string) => w.includes("Skipping artifact without ABI"))).toBe(true);
 
