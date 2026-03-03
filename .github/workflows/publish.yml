@@ -118,7 +118,7 @@ jobs:
       - name: Compute version
         run: |
           DIST_TAG=$([[ "${{ steps.release.outputs.type }}" == "beta" ]] && echo "beta" || echo "latest")
-          VERSION=$(BUMP="${{ inputs.version_bump }}" DIST_TAG="$DIST_TAG" pnpm version:compute)
+          VERSION=$(BUMP="${{ inputs.version_bump }}" DIST_TAG="$DIST_TAG" pnpm run --silent version:compute)
           npm pkg set version="$VERSION"
           echo "Version: $VERSION (@$DIST_TAG)"
 
