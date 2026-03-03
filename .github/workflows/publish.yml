@@ -103,6 +103,12 @@ jobs:
             echo "type=release" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Seed version from npm
+        run: |
+          CURRENT=$(npm view @berachain/abis version 2>/dev/null || echo "0.0.0")
+          npm pkg set version="$CURRENT"
+          echo "Seeded version from npm: $CURRENT"
+
       - name: Bump version (beta)
         if: steps.release.outputs.type == 'beta'
         run: |

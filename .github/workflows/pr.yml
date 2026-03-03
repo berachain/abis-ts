@@ -4,6 +4,19 @@ on:
   pull_request:
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure package.json has no version field
+        run: |
+          if node -e "process.exit(require('./package.json').version ? 1 : 0)"; then
+            echo "OK: no version in package.json"
+          else
+            echo "::error::package.json must not have a version field (it is set by CI during publish)"
+            exit 1
+          fi
+
   lint:
     runs-on: ubuntu-latest
     steps:
