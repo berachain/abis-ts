@@ -11,16 +11,26 @@ import { exists } from "./utils";
 const exec = promisify(execCb);
 
 /**
- * Test whether a filename matches any of the given glob-like patterns.
+ * Test whether a file matches any of the given glob-like patterns.
  *
  * Supports `*` (any characters) and `?` (single character) wildcards.
  * All other regex-special characters in the pattern are escaped.
  *
+ * Patterns containing a `/` are tested against the full relative path
+ * (e.g. `"test/*.sol"` matches `"test/MockPool.sol"`). Patterns without
+ * a `/` are tested against the filename only (preserving backward
+ * compatibility with patterns like `"I*.sol"`).
+ *
+ * @param filename  - Basename of the file (e.g. `"MockPool.sol"`).
+ * @param patterns  - Glob patterns to test.
+ * @param relPath   - Optional relative path from the source root (e.g. `"test/MockPool.sol"`).
+ *
  * @example
  * matchesAny("IBGT.sol", ["I*.sol"]) // true
  * matchesAny("Deploy.s.sol", ["*.s.sol"]) // true
+ * matchesAny("MockPool.sol", ["test/*.sol"], "test/MockPool.sol") // true
  */
-export function matchesAny(filename: string, patterns: string[]): boolean {
+export function matchesAny(filename: string, patterns: string[], relPath?: string): boolean {
   for (const pattern of patterns) {
     const regex = new RegExp(
       `^${pattern
@@ -28,7 +38,9 @@ export function matchesAny(filename: string, patterns: string[]): boolean {
         .replace(/\*/g, ".*")
         .replace(/\?/g, ".")}$`,
     );
-    if (regex.test(filename)) return true;
+    // If the pattern contains a "/" it's a path pattern → match against relPath.
+    const target = pattern.includes("/") ? (relPath ?? filename) : filename;
+    if (regex.test(target)) return true;
   }
   return false;
 }
@@ -66,15 +78,48 @@ export function extractArtifact(
 }
 
 /**
+ * Normalize `srcDir` and `outDir` from the config into parallel arrays.
+ *
+ * - Both scalar → single-element arrays.
+ * - `srcDir` array + `outDir` scalar → `outDir` is repeated.
+ * - Both arrays → must be the same length.
+ */
+export function normalizeDirs(
+  srcDir: string | string[] | undefined,
+  outDir: string | string[] | undefined,
+): { srcDirs: string[]; outDirs: string[] } {
+  const srcDirs = Array.isArray(srcDir) ? srcDir : [srcDir ?? "src"];
+  const outDirs = Array.isArray(outDir) ? outDir : [outDir ?? "out"];
+
+  if (srcDirs.length === 0) {
+    throw new Error("srcDir must not be an empty array");
+  }
+
+  if (outDirs.length > 1 && outDirs.length !== srcDirs.length) {
+    throw new Error(
+      `When both srcDir and outDir are arrays they must have the same length (srcDir: ${srcDirs.length}, outDir: ${outDirs.length})`,
+    );
+  }
+
+  // Expand a single outDir to match every srcDir entry.
+  const expandedOutDirs = outDirs.length === 1 ? srcDirs.map(() => outDirs[0]) : outDirs;
+
+  return { srcDirs, outDirs: expandedOutDirs };
+}
+
+/**
  * Walk a source repo's Solidity directory and collect compiled artifacts.
  *
  * Discovery strategy:
  * 1. Optionally run the source's build command.
- * 2. Enumerate all `*.sol` files under the source's `srcDir`.
+ * 2. Enumerate all `*.sol` files under each of the source's `srcDir` entries.
  * 3. For each `.sol` file not matching `excludePatterns`, look for a
  *    matching Foundry artifact at `{outDir}/{Filename}.sol/{ContractName}.json`.
  * 4. Parse and validate each artifact, collecting warnings for missing
  *    or invalid entries.
+ *
+ * `srcDir` and `outDir` may each be a single string or an array of strings
+ * to support monorepos with multiple nested packages.
  *
  * @returns discovered artifacts and any warnings encountered.
  * @throws if the repo path does not exist and `onMissingRepo` is `"error"`.
@@ -98,52 +143,66 @@ export async function discoverArtifacts(
     await exec(source.buildCommand, { cwd: repoPath });
   }
 
-  const srcDir = path.join(repoPath, source.srcDir ?? "src");
-  const outDir = path.join(repoPath, source.outDir ?? "out");
+  const { srcDirs, outDirs } = normalizeDirs(source.srcDir, source.outDir);
   const excludePatterns = source.excludePatterns ?? [];
-
-  const solFiles = await fg(["**/*.sol"], {
-    cwd: srcDir,
-    onlyFiles: true,
-  });
-
-  solFiles.sort((a, b) => a.localeCompare(b));
 
   const warnings: string[] = [];
   const artifacts: DiscoveredArtifact[] = [];
 
-  for (const relSolPath of solFiles) {
-    const filename = path.basename(relSolPath);
+  for (let i = 0; i < srcDirs.length; i++) {
+    const srcDir = path.join(repoPath, srcDirs[i]);
+    const outDir = path.join(repoPath, outDirs[i]);
 
-    if (matchesAny(filename, excludePatterns)) {
+    if (!(await exists(srcDir))) {
+      warnings.push(`Source directory does not exist: ${srcDirs[i]}`);
       continue;
     }
 
-    const contractName = filename.replace(/\.sol$/, "");
-    const relDir = path.dirname(relSolPath);
-    const artifactPath = path.join(outDir, `${filename}/${contractName}.json`);
+    const solFiles = await fg(["**/*.sol"], {
+      cwd: srcDir,
+      onlyFiles: true,
+    });
 
-    if (!(await exists(artifactPath))) {
-      warnings.push(`No artifact found for ${relSolPath}`);
-      continue;
+    solFiles.sort((a, b) => a.localeCompare(b));
+
+    for (const relSolPath of solFiles) {
+      const filename = path.basename(relSolPath);
+
+      if (matchesAny(filename, excludePatterns, relSolPath)) {
+        continue;
+      }
+
+      const contractName = filename.replace(/\.sol$/, "");
+      const relDir = path.dirname(relSolPath);
+      // Foundry flattens:  out/File.sol/Contract.json
+      // Hardhat preserves:  artifacts/sub/File.sol/Contract.json
+      // Try the flat path first (most common), fall back to the nested path.
+      const flatPath = path.join(outDir, `${filename}/${contractName}.json`);
+      const nestedPath = path.join(outDir, `${relSolPath}/${contractName}.json`);
+      const artifactPath = (await exists(flatPath)) ? flatPath : nestedPath;
+
+      if (!(await exists(artifactPath))) {
+        warnings.push(`No artifact found for ${relSolPath} -> ${artifactPath}`);
+        continue;
+      }
+
+      const raw = await fs.readFile(artifactPath, "utf8");
+      let parsed: ArtifactLike;
+      try {
+        parsed = JSON.parse(raw) as ArtifactLike;
+      } catch {
+        warnings.push(`Skipping invalid JSON: ${artifactPath}`);
+        continue;
+      }
+
+      const extracted = extractArtifact(artifactPath, source.id, relDir, parsed);
+      if (!extracted) {
+        warnings.push(`Skipping artifact without ABI: ${relSolPath}`);
+        continue;
+      }
+
+      artifacts.push(extracted);
     }
-
-    const raw = await fs.readFile(artifactPath, "utf8");
-    let parsed: ArtifactLike;
-    try {
-      parsed = JSON.parse(raw) as ArtifactLike;
-    } catch {
-      warnings.push(`Skipping invalid JSON: ${artifactPath}`);
-      continue;
-    }
-
-    const extracted = extractArtifact(artifactPath, source.id, relDir, parsed);
-    if (!extracted) {
-      warnings.push(`Skipping artifact without ABI: ${relSolPath}`);
-      continue;
-    }
-
-    artifacts.push(extracted);
   }
 
   return { artifacts, warnings };

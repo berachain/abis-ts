@@ -4,3 +4,5 @@ coverage
 .vitest
 src/generated
 .repos
+abi-manifest.json
+.claude
