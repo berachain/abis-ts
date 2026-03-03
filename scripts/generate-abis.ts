@@ -52,35 +52,39 @@ export async function generateAbis(options: GenerateOptions = {}): Promise<{
   const allArtifacts: DiscoveredArtifact[] = [];
   const warnings: string[] = [];
 
-  for (const source of config.sources) {
-    const repoOverride = options.repoOverrides?.[source.id] ?? options.repoOverrides?.["*"];
-    const refOverride = options.refOverrides?.[source.id] ?? options.refOverrides?.["*"];
-    const effectiveSource = {
-      ...source,
-      ...(repoOverride && source.repo ? { repo: repoOverride } : {}),
-      ...(refOverride ? { ref: refOverride } : {}),
-    };
+  const results = await Promise.all(
+    config.sources.map(async (source) => {
+      const repoOverride = options.repoOverrides?.[source.id] ?? options.repoOverrides?.["*"];
+      const refOverride = options.refOverrides?.[source.id] ?? options.refOverrides?.["*"];
+      const effectiveSource = {
+        ...source,
+        ...(repoOverride && source.repo ? { repo: repoOverride } : {}),
+        ...(refOverride ? { ref: refOverride } : {}),
+      };
 
-    let resolvedPath: string;
-    try {
-      resolvedPath = await ensureRepo(effectiveSource, reposDir);
-    } catch (err) {
-      const message = `Failed to resolve repo for source "${source.id}": ${err instanceof Error ? err.message : err}`;
-      if (config.onMissingRepo === "warn") {
-        warnings.push(message);
-        continue;
+      let resolvedPath: string;
+      try {
+        resolvedPath = await ensureRepo(effectiveSource, reposDir);
+      } catch (err) {
+        const message = `Failed to resolve repo for source "${source.id}": ${err instanceof Error ? err.message : err}`;
+        if (config.onMissingRepo === "warn") {
+          return { artifacts: [], warnings: [message] };
+        }
+        throw new Error(message);
       }
-      throw new Error(message);
-    }
 
-    const discovered = await discoverArtifacts(
-      source,
-      resolvedPath,
-      options.runBuild ?? true,
-      config.onMissingRepo ?? "error",
-    );
-    allArtifacts.push(...discovered.artifacts);
-    warnings.push(...discovered.warnings);
+      return discoverArtifacts(
+        source,
+        resolvedPath,
+        options.runBuild ?? true,
+        config.onMissingRepo ?? "error",
+      );
+    }),
+  );
+
+  for (const result of results) {
+    allArtifacts.push(...result.artifacts);
+    warnings.push(...result.warnings);
   }
 
   const modules = allArtifacts.map((a) => artifactToModule(a, config.mainSource));
