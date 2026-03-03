@@ -93,8 +93,9 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
+          BUMP="${{ inputs.version_bump }}"
           DIST_TAG="latest"
-          if [ "${{ inputs.contracts_ref }}" != "main" ] || [ "${{ inputs.staking_pools_ref }}" != "main" ]; then
+          if [ "${{ inputs.contracts_ref }}" != "main" ] || [ "${{ inputs.staking_pools_ref }}" != "main" ] || [[ "$BUMP" == pre* ]] || [[ "$BUMP" == *-* ]]; then
             DIST_TAG="beta"
           fi
           pnpm changelog --tag "$DIST_TAG" --out=CHANGELOG_BODY.md || true
@@ -107,37 +108,19 @@ jobs:
       - name: Resolve release type
         id: release
         run: |
-          if [ "${{ inputs.contracts_ref }}" != "main" ] || [ "${{ inputs.staking_pools_ref }}" != "main" ]; then
+          BUMP="${{ inputs.version_bump }}"
+          if [ "${{ inputs.contracts_ref }}" != "main" ] || [ "${{ inputs.staking_pools_ref }}" != "main" ] || [[ "$BUMP" == pre* ]] || [[ "$BUMP" == *-* ]]; then
             echo "type=beta" >> "$GITHUB_OUTPUT"
           else
             echo "type=release" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Seed version from npm
+      - name: Compute version
         run: |
-          CURRENT=$(npm view @berachain/abis version 2>/dev/null || echo "0.0.0")
-          npm pkg set version="$CURRENT"
-          echo "Seeded version from npm: $CURRENT"
-
-      - name: Bump version (beta)
-        if: steps.release.outputs.type == 'beta'
-        run: |
-          BUMP="${{ inputs.version_bump }}"
-          if [[ "$BUMP" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            npm version "$BUMP-beta.$(date +%Y%m%d%H%M%S)" --no-git-tag-version
-          else
-            npm version "pre$BUMP" --preid beta --no-git-tag-version
-          fi
-
-      - name: Bump version (release)
-        if: steps.release.outputs.type == 'release'
-        run: |
-          BUMP="${{ inputs.version_bump }}"
-          if [[ "$BUMP" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            npm version "$BUMP" --no-git-tag-version
-          else
-            npm version "$BUMP" --no-git-tag-version
-          fi
+          DIST_TAG=$([[ "${{ steps.release.outputs.type }}" == "beta" ]] && echo "beta" || echo "latest")
+          VERSION=$(BUMP="${{ inputs.version_bump }}" DIST_TAG="$DIST_TAG" pnpm version:compute)
+          npm pkg set version="$VERSION"
+          echo "Version: $VERSION (@$DIST_TAG)"
 
       - name: Ensure npm supports OIDC
         run: npm install -g npm@latest

@@ -22,8 +22,8 @@
   },
   "scripts": {
     "abi:generate": "tsx scripts/generate-abis.ts",
+    "version:compute": "tsx scripts/compute-version.ts",
     "build": "tsup",
-    "prepack": "pnpm abi:generate && pnpm build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "changelog": "tsx scripts/changelog.ts",
