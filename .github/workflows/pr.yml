@@ -17,6 +17,16 @@ jobs:
             exit 1
           fi
 
+      - name: Ensure README exports section is empty
+        run: |
+          node -e "
+            const content = require('fs').readFileSync('README.md', 'utf8');
+            const between = content.match(/<!-- exports:start -->([\s\S]*?)<!-- exports:end -->/)?.[1] ?? null;
+            if (between === null) { console.error('exports markers missing from README.md'); process.exit(1); }
+            if (between.trim()) { console.error('README.md exports section must be empty (tree is generated at publish time)'); process.exit(1); }
+            console.log('OK: exports section is empty');
+          "
+
   lint:
     runs-on: ubuntu-latest
     steps:
