@@ -51,7 +51,9 @@ if (semverValid(bump)) {
 }
 
 if (!version) {
-  console.error(`[compute-version] Failed to compute version: base=${base}, bump=${bump}, distTag=${distTag}`);
+  console.error(
+    `[compute-version] Failed to compute version: base=${base}, bump=${bump}, distTag=${distTag}`,
+  );
   process.exitCode = 1;
   process.exit();
 }
