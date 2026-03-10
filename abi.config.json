@@ -48,6 +48,22 @@
       "outDir": ["out"]
     },
     {
+      "id": "bend-irm",
+      "repo": "morpho-org/morpho-blue-irm",
+      "ref": "a7d9cce3451b4a106bfd40933ac57a785b5228f3",
+      "buildCommand": "yarn && yarn run build:forge",
+      "srcDir": ["src"],
+      "outDir": ["out"]
+    },
+    {
+      "id": "bend-public-allocator",
+      "repo": "morpho-org/public-allocator",
+      "ref": "7271fbd60881ff32a466a588f99344c6bf72629a",
+      "buildCommand": "forge install && forge build",
+      "srcDir": "src",
+      "outDir": "out"
+    },
+    {
       "id": "bex",
       "repo": "berachain/balancer-v2-monorepo",
       "ref": "master",
