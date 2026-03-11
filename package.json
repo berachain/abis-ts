@@ -20,6 +20,13 @@
       "default": "./dist/*.mjs"
     }
   },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/*.d.ts"
+      ]
+    }
+  },
   "scripts": {
     "abi:generate": "tsx scripts/generate-abis.ts",
     "version:compute": "tsx scripts/compute-version.ts",
