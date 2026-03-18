@@ -218,7 +218,7 @@ export async function fetchManifestFromNpm(packageName: string, tag = "latest"):
     if (!tarball) return null;
 
     // Extract abi-manifest.json from the tarball.
-    await exec(`tar -xzf "${tarball}" --include="*/abi-manifest.json"`, {
+    await exec(`tar -xzf "${tarball}" "package/abi-manifest.json"`, {
       cwd: tmpDir,
     });
 
