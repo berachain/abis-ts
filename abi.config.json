@@ -35,7 +35,7 @@
       "id": "bend",
       "repo": "berachain/morpho-blue",
       "ref": "main",
-      "buildCommand": "yarn && yarn run build:forge",
+      "buildCommand": "yarn --cache-folder .yarn-cache && yarn --cache-folder .yarn-cache run build:forge",
       "srcDir": ["src"],
       "outDir": ["out"]
     },
@@ -43,7 +43,7 @@
       "id": "bend-metamorpho",
       "repo": "berachain/contracts-metamorpho-v1.1",
       "ref": "main",
-      "buildCommand": "yarn && yarn run build:forge",
+      "buildCommand": "yarn --cache-folder .yarn-cache && yarn --cache-folder .yarn-cache run build:forge",
       "srcDir": ["src"],
       "outDir": ["out"]
     },
@@ -51,7 +51,7 @@
       "id": "bend-irm",
       "repo": "morpho-org/morpho-blue-irm",
       "ref": "a7d9cce3451b4a106bfd40933ac57a785b5228f3",
-      "buildCommand": "yarn && yarn run build:forge",
+      "buildCommand": "yarn --cache-folder .yarn-cache && yarn --cache-folder .yarn-cache run build:forge",
       "srcDir": ["src"],
       "outDir": ["out"]
     },
@@ -67,7 +67,7 @@
       "id": "bex",
       "repo": "berachain/balancer-v2-monorepo",
       "ref": "master",
-      "buildCommand": "yarn && yarn workspace @balancer-labs/balancer-js build && yarn build ",
+      "buildCommand": "yarn --cache-folder .yarn-cache && yarn --cache-folder .yarn-cache workspace @balancer-labs/balancer-js build && yarn --cache-folder .yarn-cache build",
       "srcDir": [
         "pkg/vault/contracts",
         "pkg/pool-weighted/contracts",

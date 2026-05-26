@@ -83,9 +83,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_READ_ONLY_PAT }}
 
-      - name: Prune node_modules from cloned repos
+      - name: Prune node_modules and yarn caches from cloned repos
         if: always()
-        run: find .repos -name node_modules -type d -prune -exec rm -rf {} +
+        run: find .repos \( -name node_modules -o -name .yarn-cache \) -type d -prune -exec rm -rf {} +
 
       - run: pnpm test
 
