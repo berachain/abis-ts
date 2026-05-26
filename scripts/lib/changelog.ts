@@ -267,7 +267,7 @@ export async function resolveBaseVersion(
     // Pick whichever is newer.
     const winner = semverGte(latestVersion, tagVersion) ? latestVersion : tagVersion;
     if (winner !== tagVersion) {
-      console.log(
+      console.error(
         `[changelog] @latest (${latestVersion}) is newer than @${tag} (${tagVersion}) — using @latest.`,
       );
     }
