@@ -1,4 +1,6 @@
 import path from "node:path";
+import type { Abi } from "abitype";
+import { applyBeraChefOverride } from "./beraChefOverride.js";
 import { toCamelCase } from "./naming";
 import type { DiscoveredArtifact, GeneratedModule } from "./types";
 
@@ -20,7 +22,13 @@ export function artifactToModule(artifact: DiscoveredArtifact, mainSource?: stri
   const innerPath = artifact.relDir === "." ? fileName : path.posix.join(artifact.relDir, fileName);
   const isMain = mainSource !== undefined && artifact.sourceId === mainSource;
   const moduleRelPath = isMain ? innerPath : path.posix.join(artifact.sourceId, innerPath);
-  const abiContent = JSON.stringify(artifact.abi, null, 2);
+  const abi =
+    artifact.sourceId === "contracts" &&
+    artifact.contractName === "BeraChef" &&
+    artifact.relDir === "pol/rewards"
+      ? applyBeraChefOverride(artifact.abi as Abi)
+      : artifact.abi;
+  const abiContent = JSON.stringify(abi, null, 2);
 
   return {
     sourceId: artifact.sourceId,

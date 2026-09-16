@@ -1,4 +1,7 @@
+import { formatAbiItem, parseAbi } from "abitype";
 import { describe, expect, it } from "vitest";
+
+import { parseAbiFromModuleContent } from "./changelog";
 
 import { artifactToModule, dedupeAndValidateModules } from "./modules";
 
@@ -100,5 +103,59 @@ describe("dedupeAndValidateModules", () => {
       "a:Beta",
       "z:Alpha",
     ]);
+  });
+});
+
+describe("BeraChef rollout compatibility", () => {
+  const legacy = parseAbi([
+    "function rewardAllocationInactivityBlockSpan() view returns (uint64)",
+    "function isValExemptedFromInactivity(bytes valPubkey) view returns (bool isExemptedFromInactivity)",
+    "function setValInactivityExemption(bytes valPubkey, bool isExempted)",
+    "event ValInactivityExemptionSet(bytes indexed valPubkey, bool isExempted)",
+    "error CannotRecoverRewardToken()",
+  ]);
+  const upgraded = parseAbi([
+    "function rewardAllocationInactivityBlockSpan() view returns (uint64)",
+    "function isValidatorExemptFromBaselineOverride(bytes valPubkey) view returns (bool isExempted)",
+    "function isActiveIncentiveVault(address vault) view returns (bool)",
+    "function setValBaselineOverrideExemption(bytes valPubkey, bool isExempted)",
+    "event ValBaselineOverrideExemptionSet(bytes indexed valPubkey, bool isExempted)",
+    "error IncentiveRateTooLow()",
+  ]);
+
+  it.each([{ abi: legacy }, { abi: upgraded }])("keeps both deployed interfaces in the existing export", ({
+    abi,
+  }) => {
+    const mod = artifactToModule(
+      artifact({ contractName: "BeraChef", relDir: "pol/rewards", abi }),
+      "contracts",
+    );
+    const generated = parseAbiFromModuleContent(mod.moduleContent);
+    expect(mod.moduleRelPath).toBe("pol/rewards/beraChef.ts");
+    if (!generated) throw new Error("Generated ABI is missing");
+    const signatures = generated.map(formatAbiItem);
+    for (const item of [...legacy, ...upgraded]) {
+      expect(signatures).toContain(formatAbiItem(item));
+    }
+    expect(new Set(signatures).size).toBe(signatures.length);
+    expect(generated).toEqual(expect.arrayContaining([...abi]));
+  });
+
+  it("does not add rollout entries to other contracts or sources", () => {
+    for (const overrides of [
+      { contractName: "RewardVault", relDir: "pol/rewards" },
+      { sourceId: "other", contractName: "BeraChef", relDir: "pol/rewards" },
+      { contractName: "BeraChef", relDir: "old_versions" },
+    ]) {
+      const mod = artifactToModule(artifact({ ...overrides, abi: legacy }), "contracts");
+      expect(parseAbiFromModuleContent(mod.moduleContent)).toEqual(legacy);
+    }
+  });
+
+  it("rejects incompatible definitions instead of publishing ambiguous overloads", () => {
+    const abi = parseAbi(["function isActiveIncentiveVault(address vault) view returns (uint256)"]);
+    expect(() =>
+      artifactToModule(artifact({ contractName: "BeraChef", relDir: "pol/rewards", abi }), "contracts"),
+    ).toThrow(/incompatible.*isActiveIncentiveVault/i);
   });
 });
