@@ -130,14 +130,14 @@ jobs:
           echo "Version: $VERSION (@$DIST_TAG)"
 
       - name: Ensure npm supports OIDC
-        run: npm install -g npm@latest
+        run: npm install -g npm@11.19.1
 
       - name: Publish to npm
         run: |
           if [ "${{ steps.release.outputs.type }}" = "beta" ]; then
-            pnpm publish --access public --tag beta --no-git-checks --provenance
+            npm publish --access public --tag beta --provenance
           else
-            pnpm publish --access public --tag latest --no-git-checks --provenance
+            npm publish --access public --tag latest --provenance
           fi
 
       - name: Tag and push
