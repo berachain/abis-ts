@@ -83,6 +83,22 @@
         "pkg/pool-utils/artifacts/contracts"
       ],
       "excludePatterns": ["test/*.sol"]
+    },
+    {
+      "id": "layerzero",
+      "repo": "LayerZero-Labs/devtools",
+      "ref": "4973ba8bef7b0fdf7268469abea3ea50dbd4bbd8",
+      "buildCommand": "test -s packages/oft-evm/artifacts/OFT.sol/OFT.json && test -s packages/oft-evm/artifacts/OFTAdapter.sol/OFTAdapter.json",
+      "srcDir": "packages/oft-evm/contracts",
+      "outDir": "packages/oft-evm/artifacts",
+      "excludePatterns": [
+        "Fee.sol",
+        "MintBurnOFTAdapter.sol",
+        "NativeOFTAdapter.sol",
+        "OFTCore.sol",
+        "interfaces/*",
+        "libs/*"
+      ]
     }
   ]
 }
