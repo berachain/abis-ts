@@ -63,7 +63,7 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # v1.8.0
+        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1.9.1
 
       - run: pnpm install --frozen-lockfile
 
@@ -85,7 +85,10 @@ jobs:
 
       - name: Prune node_modules and yarn caches from cloned repos
         if: always()
-        run: find .repos \( -name node_modules -o -name .yarn-cache \) -type d -prune -exec rm -rf {} +
+        run: |
+          if [ -d .repos ]; then
+            find .repos \( -name node_modules -o -name .yarn-cache \) -type d -prune -exec rm -rf {} +
+          fi
 
       - run: pnpm test
 
