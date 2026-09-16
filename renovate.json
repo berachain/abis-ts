@@ -1,6 +1,51 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigestsToSemver"],
+  "enabledManagers": ["github-actions", "npm"],
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 2,
+  "schedule": ["* 0-5 * * 1"],
+  "labels": ["dependencies", "automated"],
+  "commitMessagePrefix": "chore(deps):",
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "labels": ["security", "supply-chain"]
+  },
+  "packageRules": [
+    {
+      "description": "Keep npm dependencies and pnpm catalogs on exact versions; preserve engine and peer compatibility ranges.",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["!engines", "!peerDependencies"],
+      "rangeStrategy": "pin"
+    },
+    {
+      "description": "Group exact-version and action SHA pinning into one PR, available any time.",
+      "matchUpdateTypes": ["pin", "pinDigest"],
+      "groupName": "dependency pins",
+      "groupSlug": "dependency-pins",
+      "schedule": ["at any time"]
+    },
+    {
+      "description": "Everything non-major (actions + npm) batches into ONE weekly PR. 3-day soak guards against compromised/yanked releases. Majors excluded (handled below).",
+      "matchUpdateTypes": ["digest", "minor", "patch"],
+      "groupName": "weekly dependency updates",
+      "groupSlug": "weekly-dependency-updates",
+      "minimumReleaseAge": "3 days",
+      "prCreation": "not-pending"
+    },
+    {
+      "description": "Major updates stay individual and gated so a human verifies each for breaking changes. 3-day soak + dashboard approval + breaking label.",
+      "matchUpdateTypes": ["major"],
+      "minimumReleaseAge": "3 days",
+      "prCreation": "not-pending",
+      "dependencyDashboardApproval": true,
+      "addLabels": ["breaking"]
+    },
+    {
+      "description": "Runner images and toolchain versions (go, node, etc.) are infra decisions, not action pinning -- leave them alone.",
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["github-runner", "uses-with"],
+      "enabled": false
+    }
   ]
 }
