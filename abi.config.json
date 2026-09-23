@@ -99,6 +99,22 @@
         "interfaces/*",
         "libs/*"
       ]
+    },
+    {
+      "id": "wab",
+      "repo": "berachain/bera-wrapped-asset-bridge",
+      "ref": "main",
+      "buildCommand": "mkdir -p out/WOFTAdapterFactory.sol && cp deployments/ethereum-mainnet/BeraWOFTAdapterFactory.json out/WOFTAdapterFactory.sol/WOFTAdapterFactory.json",
+      "srcDir": "contracts",
+      "outDir": "out",
+      "excludePatterns": [
+        "WOFT.sol",
+        "WOFTAdapter.sol",
+        "WOFTFactory.sol",
+        "interfaces/*",
+        "mocks/*",
+        "utils/*"
+      ]
     }
   ]
 }
