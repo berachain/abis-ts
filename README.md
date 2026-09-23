@@ -50,6 +50,7 @@ ABIs are generated from these contract repositories:
 | `staking-pools/` | [berachain/contracts-staking-pools](https://github.com/berachain/contracts-staking-pools) |
 | `bend/` | [berachain/morpho-blue](https://github.com/berachain/morpho-blue) |
 | `layerzero/` | [LayerZero-Labs/devtools](https://github.com/LayerZero-Labs/devtools/tree/4973ba8bef7b0fdf7268469abea3ea50dbd4bbd8/packages/oft-evm) |
+| `wab/` | [berachain/bera-wrapped-asset-bridge](https://github.com/berachain/bera-wrapped-asset-bridge) |
 | `bex/` | [berachain/balancer-v2-monorepo](https://github.com/berachain/balancer-v2-monorepo) |
 
 ## License
