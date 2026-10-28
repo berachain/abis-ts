@@ -59,6 +59,7 @@ pnpm abi:clean         # Remove cloned repos (.repos/)
 
 - **Node 24** required (see `.nvmrc`).
 - **Biome** for linting and formatting (see `biome.json`).
+- **Renovate** stays in local `renovate.json`. Do not extend `local>berachain/renovate-config:dapps` — this repo's Renovate app cannot resolve that preset. `customManagers:biomeVersions` keeps the `biome.json` `$schema` version in sync, which requires `custom.jsonata` in `enabledManagers`.
 - **Pinned dependencies** — use exact versions, no `^` or `~` prefixes.
 - **No barrel export** — the package is tree-shakeable by default. Each ABI is imported
   via subpath: `import { tokenAbi } from "@berachain/abis/contracts/pol/rewards/token"`.
